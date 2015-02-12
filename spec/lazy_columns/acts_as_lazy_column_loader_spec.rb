@@ -47,6 +47,26 @@ describe LazyColumns::ActsAsLazyColumnLoader do
       action.comments.should == "some comments"
     end
 
+    it "should not break attribute setter if getter was not called" do
+      action.comments = 'some new comments'
+      action.save!
+      Action.find(action.id).comments.should == 'some new comments'
+    end
+
+    it "should not break attribute setter if getter was called" do
+      action.comments
+      action.comments = 'some new comments'
+      action.save!
+      Action.find(action.id).comments.should == 'some new comments'
+    end
+
+    it "should mark a column as loaded even if it is empty" do
+      action = create_and_reload_action_from_db(Action, {})
+      action.has_attribute?(:comments).should == false
+      action.comments
+      action.has_attribute?(:comments).should == true
+    end
+
     it "should let you modify normal attributes" do
       action.title = 'some new title'
       action.comments
@@ -63,8 +83,8 @@ describe LazyColumns::ActsAsLazyColumnLoader do
     end
   end
 
-  def create_and_reload_action_from_db(klass=Action)
-    klass.find Action.create(title: "some action", comments: "some comments").id
+  def create_and_reload_action_from_db(klass=Action, attributes={title: "some action", comments: "some comments"})
+    klass.find Action.create(attributes).id
   end
 
   class ActionWith2LazyColumns < ActiveRecord::Base
